@@ -1,12 +1,11 @@
-# output "nic-private-ip" {
-#     value = "${azurerm_network_interface.AppNic.private_ip_address}"
-#     value = join(",",azurerm_network_interface.AppNic.*.private_ip_address)
-# }
-
-output "nic-public-ip" {
-    value = "${azurerm_public_ip.app_ip.ip_address}"
+output "hostname" {
+  value = "${var.hostname}"
 }
 
-# output "nic-ids" {
-#     value = ["${element(azurerm_network_interface.nic.*.id, count.index)}"]
-# }
+output "vm_fqdn" {
+  value = "${azurerm_public_ip.lbpip.fqdn}"
+}
+
+output "VMsRDPacces" {
+  value = "${formatlist("RDP_URL=%v:%v", azurerm_public_ip.lbpip.fqdn, azurerm_lb_nat_rule.tcp.*.frontend_port)}"
+}

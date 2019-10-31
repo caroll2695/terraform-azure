@@ -1,41 +1,51 @@
-resource "azurerm_public_ip" "lb" {
-  name                = "TF-LB-public-ip"
-  location            = "West US"
-  resource_group_name = "${azurerm_resource_group.rg.name}"
-  allocation_method   = "Static"
-}
-
-resource "azurerm_lb" "lb" {
-  name                = "TF-LoadBalancer"
-  location            = "${azurerm_resource_group.rg.location}"
-  resource_group_name = "${azurerm_resource_group.rg.name}"
-
-  frontend_ip_configuration {
-    name                 = "PublicIPAddress"
-    public_ip_address_id = "${azurerm_public_ip.lb.id}"
-  }
+resource "azurerm_storage_account" "storage" {
+  name                     = "${var.dns_name}stor"
+  location                 = "${var.location}"
+  resource_group_name      = "${azurerm_resource_group.rg.name}"
+  account_tier             = "${var.storage_account_tier}"
+  account_replication_type = "${var.storage_replication_type}"
 }
 
 resource "azurerm_availability_set" "avset" {
-  name                         = "TF-AVset"
+  name                         = "${var.dns_name}avset"
   location                     = "${var.location}"
   resource_group_name          = "${azurerm_resource_group.rg.name}"
   platform_fault_domain_count  = 2
   platform_update_domain_count = 2
   managed                      = true
 }
+
+resource "azurerm_public_ip" "lbpip" {
+  name                = "${var.rg_prefix}-ip"
+  location            = "${var.location}"
+  resource_group_name = "${azurerm_resource_group.rg.name}"
+  allocation_method   = "Dynamic"
+  domain_name_label   = "${var.lb_ip_dns_name}"
+}
+
+resource "azurerm_lb" "lb" {
+  resource_group_name = "${azurerm_resource_group.rg.name}"
+  name                = "${var.rg_prefix}lb"
+  location            = "${var.location}"
+
+  frontend_ip_configuration {
+    name                 = "LoadBalancerFrontEnd"
+    public_ip_address_id = "${azurerm_public_ip.lbpip.id}"
+  }
+}
+
 resource "azurerm_lb_backend_address_pool" "backend_pool" {
   resource_group_name = "${azurerm_resource_group.rg.name}"
   loadbalancer_id     = "${azurerm_lb.lb.id}"
-  name                = "BackendPool"
+  name                = "BackendPool1"
 }
 
 resource "azurerm_lb_nat_rule" "tcp" {
   resource_group_name            = "${azurerm_resource_group.rg.name}"
   loadbalancer_id                = "${azurerm_lb.lb.id}"
-  name                           = "RDP-VM"
+  name                           = "RDP-VM-${count.index}"
   protocol                       = "tcp"
-  frontend_port                  = "5000"
+  frontend_port                  = "5000${count.index + 1}"
   backend_port                   = 3389
   frontend_ip_configuration_name = "LoadBalancerFrontEnd"
   count                          = 2
@@ -65,3 +75,6 @@ resource "azurerm_lb_probe" "lb_probe" {
   interval_in_seconds = 5
   number_of_probes    = 2
 }
+
+
+

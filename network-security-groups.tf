@@ -1,7 +1,7 @@
 resource "azurerm_network_security_group" "nsg" {
-  name                = "TF-NSG"
+  name                = "${var.network_security_group}"
   resource_group_name = "${azurerm_resource_group.rg.name}"
-  location            = "${azurerm_resource_group.rg.location}"
+  location            = "${var.location}"
 }
 
 # NOTE: this allows SSH from any network
@@ -18,3 +18,4 @@ resource "azurerm_network_security_rule" "ssh" {
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
 }
+
